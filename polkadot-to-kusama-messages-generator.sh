@@ -10,10 +10,10 @@ set -eu
 
 # Path to relay binary
 RELAY_BINARY_PATH=./bin/substrate-relay
-# Kusama node host
-KUSAMA_HOST=127.0.0.1
-# Kusama node port
-KUSAMA_PORT=9944
+# Polkadot node host
+POLKADOT_HOST=127.0.0.1
+# Polkadot node port
+POLKADOT_PORT=9946
 # Kusama signer
 KUSAMA_SIGNER=//Bob
 # Polkadot signer
@@ -26,11 +26,11 @@ LANE=00000000
 # submit Millau to Rialto message
 submit_message() {
 	MESSAGE_PARAMS="$*"
-	$RELAY_BINARY_PATH 2>&1 send-message kusama-to-polkadot \
-		--source-host=$KUSAMA_HOST\
-		--source-port=$KUSAMA_PORT\
-		--source-signer=$KUSAMA_SIGNER\
-		--target-signer=$POLKADOT_SIGNER\
+	$RELAY_BINARY_PATH 2>&1 send-message polkadot-to-kusama \
+		--source-host=$POLKADOT_HOST\
+		--source-port=$POLKADOT_PORT\
+		--source-signer=$POLKADOT_SIGNER\
+		--target-signer=$KUSAMA_SIGNER\
 		--lane=$LANE\
 		--origin Source \
 		$MESSAGE_PARAMS
@@ -48,6 +48,6 @@ do
 	MESSAGE="remark"
 
 	# submit message
-	echo "Sending message from Kusama to Polkadot"
+	echo "Sending message from Polkadot to Kusama"
 	submit_message $MESSAGE
 done

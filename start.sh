@@ -74,7 +74,7 @@ export RUST_LOG
 	--unsafe-rpc-external\
 	--unsafe-ws-external"&
 ./run-with-log.sh polkadot-bob "./bin/polkadot\
-	--chain=polkadot-dev
+	--chain=polkadot-local
 	--bob\
 	--base-path=data/polkadot-bob.db\
 	--bootnodes=/ip4/127.0.0.1/tcp/30335/p2p/12D3KooWKWnNktXrugMMYa4NFB18qxwF49rABJgHiLGJq7uVfs5E\
@@ -103,7 +103,7 @@ RELAY_BINARY_PATH=./bin/substrate-relay
 
 # initialize Kusama -> Polkadot headers bridge
 ./run-with-log.sh initialize-kusama-to-polkadot "$RELAY_BINARY_PATH\
-	init-bridge KusamaToPolkadot\
+	init-bridge kusama-to-polkadot\
 	--source-host=$KUSAMA_HOST\
 	--source-port=$KUSAMA_PORT\
 	--target-host=$POLKADOT_HOST\
@@ -111,23 +111,49 @@ RELAY_BINARY_PATH=./bin/substrate-relay
 	--target-signer=//Alice"&
 
 # initialize Polkadot -> Kusama headers bridge
-./run-with-log.sh initialize-wococo-to-rococo "$RELAY_BINARY_PATH\
-	init-bridge PolkadotToKusama\
+./run-with-log.sh initialize-polkadot-to-kusama "$RELAY_BINARY_PATH\
+	init-bridge polkadot-to-kusama\
 	--source-host=$POLKADOT_HOST\
 	--source-port=$POLKADOT_PORT\
 	--target-host=$KUSAMA_HOST\
 	--target-port=$KUSAMA_PORT\
 	--target-signer=//Alice"&
 
+# give some time to mine initialization transactions
+sleep 60
+
+# start Kusama -> Polkadot headers relay
+#./run-with-log.sh relay-kusama-headers-to-polkadot "$RELAY_BINARY_PATH\
+#	relay-headers kusama-to-polkadot\
+#	--source-host=$KUSAMA_HOST\
+#	--source-port=$KUSAMA_PORT\
+#	--target-host=$POLKADOT_HOST\
+#	--target-port=$POLKADOT_PORT\
+#	--target-signer=//Alice
+#	--prometheus-port=9700"&
+
+# start Polkadot -> Kusama headers relay
+#./run-with-log.sh relay-polkadot-headers-to-kusama "$RELAY_BINARY_PATH\
+#	relay-headers polkadot-to-kusama\
+#	--source-host=$POLKADOT_HOST\
+#	--source-port=$POLKADOT_PORT\
+#	--target-host=$KUSAMA_HOST\
+#	--target-port=$KUSAMA_PORT\
+#	--target-signer=//Alice
+#	--prometheus-port=9701"&
+
 # start kusama-polkadot headers+messages relay
 ./run-with-log.sh relay-kusama-polkadot "$RELAY_BINARY_PATH\
 	relay-headers-and-messages kusama-polkadot\
-	--rococo-host=$KUSAMA_HOST\
-	--rococo-port=$KUSAMA_PORT\
-	--rococo-signer=//Alice\
-	--wococo-host=$POLKADOT_HOST\
-	--wococo-port=$POLKADOT_PORT\
-	--wococo-signer=//Alice\
+	--create-relayers-fund-accounts\
+	--kusama-host=$KUSAMA_HOST\
+	--kusama-port=$KUSAMA_PORT\
+	--kusama-signer=//Bob\
+	--kusama-messages-pallet-owner=//Alice\
+	--polkadot-host=$POLKADOT_HOST\
+	--polkadot-port=$POLKADOT_PORT\
+	--polkadot-signer=//Bob\
+	--polkadot-messages-pallet-owner=//Alice\
 	--lane=00000000\
 	--prometheus-port=9700"&
 
@@ -135,7 +161,15 @@ RELAY_BINARY_PATH=./bin/substrate-relay
 ### Generate messages #########################################################
 ###############################################################################
 
+# give some time to mine conversion rate update transactions
+sleep 60
+
 # start generating Kusama -> Polkadot messages
 ./run-with-log.sh \
 	kusama-to-polkadot-messages-generator\
 	./kusama-to-polkadot-messages-generator.sh&
+
+# start generating Polkadot -> Kusama messages
+./run-with-log.sh \
+	polkadot-to-kusama-messages-generator\
+	./polkadot-to-kusama-messages-generator.sh&
